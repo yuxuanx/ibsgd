@@ -4,6 +4,8 @@ import numpy as np
 import scipy.io as sio
 from pathlib2 import Path
 from collections import namedtuple
+from sklearn.model_selection import train_test_split
+import pandas as pd
 
 def get_mnist():
     # Returns two namedtuples, with MNIST training and testing data
@@ -15,6 +17,7 @@ def get_mnist():
     (X_train, y_train), (X_test, y_test) = keras.datasets.mnist.load_data()
     X_train = np.reshape(X_train, [X_train.shape[0], -1]).astype('float32') / 255.
     X_test  = np.reshape(X_test , [X_test.shape[0] , -1]).astype('float32') / 255.
+    
     #X_train = X_train * 2.0 - 1.0
     #X_test  = X_test  * 2.0 - 1.0
 
@@ -28,6 +31,66 @@ def get_mnist():
     del X_train, X_test, Y_train, Y_test, y_train, y_test
  
     return trn, tst
+
+def get_pokeman():
+    # Returns two namedtuples, with pokeman training and testing data
+    #   trn.X is training data
+    #   trn.y is training class, pokeman ID?
+    #   trn.Y is training class, but coded as a 3-dim vector with one entry set to 1
+    # similarly for tst
+    nb_classes = 3
+    
+    dataset = pd.read_csv("300k.csv")
+    extract_rule = (dataset['class'].isin([50, 86, 128]))
+    dataset_new = dataset[['longitude', 'latitude','temperature','pressure','class']]
+    dataset_threepoke = dataset_new[extract_rule]
+    
+    y = dataset_threepoke[['class']].values
+    
+    y[y==50] = 0
+    y[y==86] = 1
+    y[y==128] = 2
+    
+    y1 = y[y==0]
+    y2 = y[y==1]
+    y3 = y[y==2]
+    
+    y1 = y1[0:600]
+    y2 = y2[0:600]
+    y3 = y3[0:600]
+    
+    x1 = dataset_threepoke[(dataset_threepoke['class']==50)].values
+    x1 = x1[0:600,0:4]
+    
+    x2 = dataset_threepoke[(dataset_threepoke['class']==86)].values
+    x2 = x2[0:600,0:4]
+    
+    x3 = dataset_threepoke[(dataset_threepoke['class']==128)].values
+    x3 = x3[0:600,0:4]
+    
+    y = np.concatenate((y1,y2,y3), axis=0)
+    
+    x = np.concatenate((x1,x2,x3), axis=0)
+    
+    X_train, X_test, y_train, y_test = train_test_split(x, y, test_size=0.2)
+    
+    X_train = keras.utils.normalize(X_train)
+    X_test = keras.utils.normalize(X_test)
+    
+    X_train = np.reshape(X_train, [X_train.shape[0], -1]).astype('float32')
+    X_test  = np.reshape(X_test , [X_test.shape[0] , -1]).astype('float32')
+
+    Y_train = keras.utils.np_utils.to_categorical(y_train, nb_classes).astype('float32')
+    Y_test  = keras.utils.np_utils.to_categorical(y_test, nb_classes).astype('float32')
+
+    Dataset = namedtuple('Dataset',['X','Y','y','nb_classes'])
+    trn = Dataset(X_train, Y_train, y_train, nb_classes)
+    tst = Dataset(X_test , Y_test, y_test, nb_classes)
+    
+    del X_train, X_test, Y_train, Y_test, y_train, y_test
+    
+    return trn, tst
+ 
 
 def get_IB_data(ID):
     # Returns two namedtuples, with IB training and testing data
@@ -96,7 +159,7 @@ def data_shuffle(data_sets_org, percent_of_train, min_test_data=80, shuffle_data
     data_sets = C()
     stop_train_index = perc(percent_of_train[0], data_sets_org.data.shape[0])
     start_test_index = stop_train_index
-    if percent_of_train > min_test_data:
+    if percent_of_train[0] > min_test_data:
         start_test_index = perc(min_test_data, data_sets_org.data.shape[0])
     data_sets.train = C()
     data_sets.test = C()

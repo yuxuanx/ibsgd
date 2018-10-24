@@ -3,7 +3,7 @@ import keras
 import keras.backend as K
 import numpy as np
 
-import cPickle
+import _pickle as cPickle
 import os
 
 import utils
@@ -131,5 +131,5 @@ class LoggingReporter(keras.callbacks.Callback):
         fname = self.cfg['SAVE_DIR'] + "/epoch%08d"% epoch
         print("Saving", fname)
         with open(fname, 'wb') as f:
-             cPickle.dump({'ACTIVATION':self.cfg['ACTIVATION'], 'epoch':epoch, 'data':data, 'loss':loss}, f, cPickle.HIGHEST_PROTOCOL)        
+             cPickle.dump({'ACTIVATION':self.cfg['ACTIVATION'], 'epoch':epoch, 'data':data, 'loss':loss}, f)        
         
